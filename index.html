@@ -1,25 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <title>Escape the Fiat Trap</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
+      :root[data-theme="dark"] {
+        --bg-color: #1a1a1a;
+        --border-color: #333;
+        --wall-color: 0x95a5a6;
+        --player-color: 0x3498db;
+        --exit-color: 0xf1c40f;
+        --bitcoin-color: 0xff9900;
+        --shitcoin-color: 0xd4a76a;
+        --status-bar-color: 0x000000;
+      }
+
+      :root[data-theme="light"] {
+        --bg-color: #f0f0f0;
+        --border-color: #ccc;
+        --wall-color: 0xbdc3c7;
+        --player-color: 0x2980b9;
+        --exit-color: 0xf39c12;
+        --bitcoin-color: 0xff7700;
+        --shitcoin-color: 0xb5906c;
+        --status-bar-color: 0x333333;
+      }
+
       body {
         margin: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-        background: #1a1a1a;
+        background: var(--bg-color);
+        transition: background-color 0.3s ease;
       }
+
       canvas {
-        border: 2px solid #333;
+        border: 2px solid var(--border-color);
+        transition: border-color 0.3s ease;
+      }
+
+      #theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background: var(--border-color);
+        color: var(--bg-color);
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        z-index: 1000;
+      }
+
+      #theme-toggle:hover {
+        opacity: 0.9;
       }
     </style>
   </head>
   <body>
+    <button id="theme-toggle">🌙 Dark Mode</button>
     <script>
+      // Theme management
+      const themeToggle = document.getElementById("theme-toggle");
+      const html = document.documentElement;
+
+      // Load saved theme preference
+      const savedTheme = localStorage.getItem("theme") || "dark";
+      html.setAttribute("data-theme", savedTheme);
+      updateThemeButton(savedTheme);
+
+      themeToggle.addEventListener("click", () => {
+        const currentTheme = html.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+        html.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        updateThemeButton(newTheme);
+
+        // Update game colors if game is running
+        if (typeof game !== "undefined" && game.isRunning) {
+          updateGameColors();
+        }
+      });
+
+      function updateThemeButton(theme) {
+        themeToggle.innerHTML =
+          theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+      }
+
+      function updateGameColors() {
+        const theme = html.getAttribute("data-theme");
+        const colors = getThemeColors();
+
+        // Update game objects colors
+        if (walls)
+          walls.children.entries.forEach((wall) => wall.setTint(colors.wall));
+        if (player) player.setTint(colors.player);
+        if (bitcoinExit) bitcoinExit.setTint(colors.exit);
+        if (bitcoinBuys)
+          bitcoinBuys.children.entries.forEach((coin) =>
+            coin.setTint(colors.bitcoin)
+          );
+        if (shitcoins)
+          shitcoins.children.entries.forEach((coin) =>
+            coin.setTint(colors.shitcoin)
+          );
+
+        // Update status bar
+        if (typeof statusBar !== "undefined") {
+          statusBar.setFillStyle(colors.statusBar);
+        }
+      }
+
+      function getThemeColors() {
+        const theme = html.getAttribute("data-theme");
+        return theme === "dark"
+          ? {
+              wall: 0x95a5a6,
+              player: 0x3498db,
+              exit: 0xf1c40f,
+              bitcoin: 0xff9900,
+              shitcoin: 0xd4a76a,
+              statusBar: 0x000000,
+            }
+          : {
+              wall: 0xbdc3c7,
+              player: 0x2980b9,
+              exit: 0xf39c12,
+              bitcoin: 0xff7700,
+              shitcoin: 0xb5906c,
+              statusBar: 0x333333,
+            };
+      }
+
       // Create victory scene
       class VictoryScene extends Phaser.Scene {
         constructor() {
@@ -39,12 +157,12 @@
 
           // Create victory text with improved styling
           const victoryText = this.add
-            .text(400, 150, "", {
+            .text(400, 80, "", {
               fontSize: "32px",
               fill: "#fff",
               align: "center",
-              fixedWidth: 600,
-              lineSpacing: 20,
+              fixedWidth: 650,
+              lineSpacing: 40,
             })
             .setOrigin(0.5);
 
@@ -64,7 +182,7 @@
           );
 
           // Create convert button with improved styling
-          const buttonBg = this.add.rectangle(400, 400, 500, 70, 0xff9900);
+          const buttonBg = this.add.rectangle(400, 450, 600, 80, 0xff9900);
           buttonBg.setInteractive();
 
           // Add hover effect
@@ -76,11 +194,11 @@
           });
 
           const buttonText = this.add
-            .text(400, 400, "Convert All USD to Bitcoin", {
-              fontSize: "28px",
+            .text(400, 450, "Convert All USD to Bitcoin", {
+              fontSize: "32px",
               fill: "#000",
               align: "center",
-              padding: { x: 20, y: 10 },
+              padding: { x: 30, y: 15 },
             })
             .setOrigin(0.5);
 
@@ -194,6 +312,7 @@
       let usdText;
       let bitcoinText;
       let yearText;
+      let statusBar;
       const INFLATION_RATE = 0.16;
       const STARTING_YEAR = 2024;
       let currentYear = STARTING_YEAR;
@@ -203,24 +322,28 @@
       let messageQueue = [];
       let isDisplayingMessage = false;
 
+      // Track game running state
+      game.isRunning = true;
+
       function preload() {
         // Create colored rectangles programmatically instead of using base64
         const graphics = this.add.graphics();
+        const colors = getThemeColors();
 
         // Player (blue)
-        graphics.fillStyle(0x3498db);
+        graphics.fillStyle(colors.player);
         graphics.fillRect(0, 0, 32, 32);
         graphics.generateTexture("player", 32, 32);
 
         // Wall (gray)
         graphics.clear();
-        graphics.fillStyle(0x95a5a6);
+        graphics.fillStyle(colors.wall);
         graphics.fillRect(0, 0, 50, 50);
         graphics.generateTexture("wall", 50, 50);
 
         // Exit (yellow with "EXIT" text)
         graphics.clear();
-        graphics.fillStyle(0xf1c40f);
+        graphics.fillStyle(colors.exit);
         graphics.fillRect(0, 0, 64, 64);
         // Add black border
         graphics.lineStyle(4, 0x000000);
@@ -229,13 +352,13 @@
 
         // Bitcoin buy opportunities (bright orange)
         graphics.clear();
-        graphics.fillStyle(0xff9900); // Bright Bitcoin orange
+        graphics.fillStyle(colors.bitcoin);
         graphics.fillRect(0, 0, 32, 32);
         graphics.generateTexture("bitcoin", 32, 32);
 
         // Shitcoin (washed out orange)
         graphics.clear();
-        graphics.fillStyle(0xd4a76a); // Washed out orange
+        graphics.fillStyle(colors.shitcoin);
         graphics.fillRect(0, 0, 32, 32);
         graphics.generateTexture("shitcoin", 32, 32);
 
@@ -302,11 +425,29 @@
         bitcoinBuys.create(75, 150, "bitcoin"); // Just below start
         bitcoinBuys.create(200, 150, "bitcoin"); // Near start, slightly right
 
-        // Create shitcoins - deeper in the maze
+        // Create shitcoins - distributed throughout the maze
         shitcoins = scene.physics.add.group();
+        // Original shitcoins
         shitcoins.create(450, 350, "shitcoin"); // Near exit
         shitcoins.create(350, 150, "shitcoin"); // Middle of maze
         shitcoins.create(250, 350, "shitcoin"); // Lower middle
+
+        // New shitcoins in strategic locations
+        shitcoins.create(500, 75, "shitcoin"); // Upper right corner trap
+        shitcoins.create(450, 250, "shitcoin"); // Middle right path
+        shitcoins.create(150, 350, "shitcoin"); // Lower left area
+        shitcoins.create(300, 75, "shitcoin"); // Upper middle trap
+        shitcoins.create(75, 300, "shitcoin"); // Left side path
+
+        // Add some randomly placed shitcoins
+        for (let i = 0; i < 3; i++) {
+          const x = Phaser.Math.Between(100, 500);
+          const y = Phaser.Math.Between(100, 400);
+          // Check if position is not too close to player start (75, 75)
+          if (Math.sqrt(Math.pow(x - 75, 2) + Math.pow(y - 75, 2)) > 100) {
+            shitcoins.create(x, y, "shitcoin");
+          }
+        }
       }
 
       function createPlayer(scene) {
@@ -325,10 +466,16 @@
 
       function createHUD(scene) {
         // Create black status bar background
-        const statusBar = scene.add.rectangle(400, 520, 800, 80, 0x000000);
+        statusBar = scene.add.rectangle(
+          400,
+          520,
+          800,
+          80,
+          getThemeColors().statusBar
+        );
 
         const textStyle = {
-          fontSize: "20px", // Slightly smaller font
+          fontSize: "20px",
           fill: "#fff",
         };
 
