@@ -355,6 +355,8 @@
           ...textStyle,
           fixedWidth: 350, // Fixed width for status
           align: "left",
+          wordWrap: { width: 350 }, // Add word wrapping
+          lineSpacing: 5, // Add line spacing for wrapped text
         });
 
         // Initial display update
@@ -398,7 +400,7 @@
           isDisplayingMessage = true;
           const message = messageQueue.shift();
           statusText.setText(message);
-          this.time.delayedCall(2000, () => {
+          this.time.delayedCall(3000, () => {
             statusText.setText("");
             isDisplayingMessage = false;
             showNextMessage.call(this);
@@ -436,7 +438,7 @@
 
         queueMessage(
           this,
-          "Rekt by shitcoin! Lost " + lossAmount.toLocaleString() + " sats! 💀"
+          "Shitcoin rekt! Lost " + lossAmount.toLocaleString() + " sats 💀"
         );
         updateDisplays();
       }
