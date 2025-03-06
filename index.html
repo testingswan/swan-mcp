@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Escape the Fiat Trap</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: #1a1a1a;
+      }
+      canvas {
+        border: 2px solid #333;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Create victory scene
+      class VictoryScene extends Phaser.Scene {
+        constructor() {
+          super({ key: "VictoryScene" });
+        }
+
+        init(data) {
+          this.finalYears = data.finalYears;
+          this.finalUSD = data.finalUSD;
+          this.bitcoinStack = data.bitcoinStack;
+          this.startingUSD = data.startingUSD;
+        }
+
+        create() {
+          // Add black background
+          this.add.rectangle(400, 300, 800, 600, 0x000000);
+
+          // Create victory text with improved styling
+          const victoryText = this.add
+            .text(400, 150, "", {
+              fontSize: "32px",
+              fill: "#fff",
+              align: "center",
+              fixedWidth: 600,
+              lineSpacing: 20,
+            })
+            .setOrigin(0.5);
+
+          // Format initial victory text with better spacing and alignment
+          victoryText.setText(
+            "You Escaped the Fiat Trap!\n\n" +
+              `Years in the Matrix: ${this.finalYears}\n` +
+              `USD Value Remaining: $${Math.floor(
+                this.finalUSD
+              ).toLocaleString()}\n` +
+              `Bitcoin Stack: ₿${(this.bitcoinStack / 100000000).toFixed(
+                8
+              )}\n` +
+              `Fiat Purchasing Power Lost: ${Math.floor(
+                (1 - this.finalUSD / this.startingUSD) * 100
+              )}%`
+          );
+
+          // Create convert button with improved styling
+          const buttonBg = this.add.rectangle(400, 400, 500, 70, 0xff9900);
+          buttonBg.setInteractive();
+
+          // Add hover effect
+          buttonBg.on("pointerover", () => {
+            buttonBg.setFillStyle(0xffaa33);
+          });
+          buttonBg.on("pointerout", () => {
+            buttonBg.setFillStyle(0xff9900);
+          });
+
+          const buttonText = this.add
+            .text(400, 400, "Convert All USD to Bitcoin", {
+              fontSize: "28px",
+              fill: "#000",
+              align: "center",
+              padding: { x: 20, y: 10 },
+            })
+            .setOrigin(0.5);
+
+          // Make button interactive
+          buttonBg.on("pointerdown", () => {
+            // Convert remaining USD to bitcoin
+            const finalSatsPurchased = Math.floor(this.finalUSD * 100);
+            this.bitcoinStack += finalSatsPurchased;
+            this.finalUSD = 0;
+
+            // Remove button
+            buttonBg.destroy();
+            buttonText.destroy();
+
+            // Create celebration effect
+            this.createCelebration();
+
+            // Update victory text with improved matrix escape message
+            victoryText.setText(
+              "🎉 You Escaped the Fiat Matrix! 🎉\n\n" +
+                `Years to Freedom: ${this.finalYears}\n` +
+                "Final USD Value: $0\n" +
+                `Bitcoin Stack: ₿${(this.bitcoinStack / 100000000).toFixed(
+                  8
+                )}\n` +
+                "Purchasing Power Secured: 100%\n\n" +
+                "Welcome to Bitcoin Freedom! ⚡"
+            );
+          });
+        }
+
+        createCelebration() {
+          // Create swan emojis that fly around
+          for (let i = 0; i < 20; i++) {
+            const swan = this.add.text(
+              Phaser.Math.Between(100, 700),
+              Phaser.Math.Between(100, 500),
+              "🦢",
+              { fontSize: "32px" }
+            );
+
+            // Random circular motion
+            const angle = Phaser.Math.Between(0, 360);
+            const speed = Phaser.Math.Between(2, 4);
+            const radius = Phaser.Math.Between(50, 150);
+            let t = 0;
+            const centerX = swan.x;
+            const centerY = swan.y;
+
+            this.tweens.add({
+              targets: swan,
+              scale: { from: 0.5, to: 1.5 },
+              alpha: { from: 0, to: 1 },
+              duration: 1000,
+              ease: "Power2",
+              onComplete: () => {
+                // After appearing, start circular motion
+                this.time.addEvent({
+                  delay: 16,
+                  loop: true,
+                  callback: () => {
+                    t += 0.02 * speed;
+                    swan.x = centerX + Math.cos(t) * radius;
+                    swan.y = centerY + Math.sin(t) * radius;
+                    swan.rotation = t;
+                  },
+                });
+              },
+            });
+          }
+        }
+      }
+
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: "#2d2d2d",
+        physics: {
+          default: "arcade",
+          arcade: {
+            gravity: { y: 0 },
+            debug: true,
+          },
+        },
+        scene: [
+          {
+            key: "GameScene",
+            preload: preload,
+            create: create,
+            update: update,
+          },
+          VictoryScene,
+        ],
+      };
+
+      const game = new Phaser.Game(config);
+
+      // Game variables
+      let player;
+      let bitcoinExit;
+      let walls;
+      let bitcoinBuys;
+      let shitcoins;
+      let cursors;
+      let gameStartTime;
+      let startingUSD = 100000;
+      let usdValue = startingUSD;
+      let bitcoinStack = 0;
+      let statusText;
+      let usdText;
+      let bitcoinText;
+      let yearText;
+      const INFLATION_RATE = 0.16;
+      const STARTING_YEAR = 2024;
+      let currentYear = STARTING_YEAR;
+      const SECONDS_PER_YEAR = 3;
+
+      // Add message queue system
+      let messageQueue = [];
+      let isDisplayingMessage = false;
+
+      function preload() {
+        // Create colored rectangles programmatically instead of using base64
+        const graphics = this.add.graphics();
+
+        // Player (blue)
+        graphics.fillStyle(0x3498db);
+        graphics.fillRect(0, 0, 32, 32);
+        graphics.generateTexture("player", 32, 32);
+
+        // Wall (gray)
+        graphics.clear();
+        graphics.fillStyle(0x95a5a6);
+        graphics.fillRect(0, 0, 50, 50);
+        graphics.generateTexture("wall", 50, 50);
+
+        // Exit (yellow with "EXIT" text)
+        graphics.clear();
+        graphics.fillStyle(0xf1c40f);
+        graphics.fillRect(0, 0, 64, 64);
+        // Add black border
+        graphics.lineStyle(4, 0x000000);
+        graphics.strokeRect(0, 0, 64, 64);
+        graphics.generateTexture("exit", 64, 64);
+
+        // Bitcoin buy opportunities (bright orange)
+        graphics.clear();
+        graphics.fillStyle(0xff9900); // Bright Bitcoin orange
+        graphics.fillRect(0, 0, 32, 32);
+        graphics.generateTexture("bitcoin", 32, 32);
+
+        // Shitcoin (washed out orange)
+        graphics.clear();
+        graphics.fillStyle(0xd4a76a); // Washed out orange
+        graphics.fillRect(0, 0, 32, 32);
+        graphics.generateTexture("shitcoin", 32, 32);
+
+        graphics.destroy();
+      }
+
+      function create() {
+        // Create game objects
+        createMaze(this);
+        createPlayer(this);
+        createHUD(this);
+
+        // Set up input
+        cursors = this.input.keyboard.createCursorKeys();
+
+        // Start game timer
+        gameStartTime = this.time.now;
+      }
+
+      function createMaze(scene) {
+        // Create wall group with physics
+        walls = scene.physics.add.staticGroup();
+
+        // Create maze layout (1 = wall, 0 = path)
+        const mazeLayout = [
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+          [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ];
+
+        // Create walls based on layout
+        const tileSize = 50;
+        mazeLayout.forEach((row, y) => {
+          row.forEach((cell, x) => {
+            if (cell === 1) {
+              walls.create(
+                x * tileSize + tileSize / 2,
+                y * tileSize + tileSize / 2,
+                "wall"
+              );
+            }
+          });
+        });
+
+        // Create game objects - make exit bigger and add text label
+        bitcoinExit = scene.physics.add.sprite(550, 350, "exit");
+        const exitText = scene.add
+          .text(550, 350, "EXIT", {
+            fontSize: "16px",
+            fill: "#000",
+            align: "center",
+          })
+          .setOrigin(0.5);
+
+        // Create Bitcoin buy opportunities - closer to start
+        bitcoinBuys = scene.physics.add.group();
+        bitcoinBuys.create(150, 75, "bitcoin"); // Right near start
+        bitcoinBuys.create(75, 150, "bitcoin"); // Just below start
+        bitcoinBuys.create(200, 150, "bitcoin"); // Near start, slightly right
+
+        // Create shitcoins - deeper in the maze
+        shitcoins = scene.physics.add.group();
+        shitcoins.create(450, 350, "shitcoin"); // Near exit
+        shitcoins.create(350, 150, "shitcoin"); // Middle of maze
+        shitcoins.create(250, 350, "shitcoin"); // Lower middle
+      }
+
+      function createPlayer(scene) {
+        // Create player sprite
+        player = scene.physics.add.sprite(75, 75, "player");
+        player.setCollideWorldBounds(true);
+
+        // Set up collisions
+        scene.physics.add.collider(player, walls);
+
+        // Set up overlap handlers
+        scene.physics.add.overlap(player, bitcoinBuys, buyBitcoin, null, scene);
+        scene.physics.add.overlap(player, shitcoins, hitShitcoin, null, scene);
+        scene.physics.add.overlap(player, bitcoinExit, reachExit, null, scene);
+      }
+
+      function createHUD(scene) {
+        // Create black status bar background
+        const statusBar = scene.add.rectangle(400, 520, 800, 80, 0x000000);
+
+        const textStyle = {
+          fontSize: "20px", // Slightly smaller font
+          fill: "#fff",
+        };
+
+        // Left side: USD and Year
+        usdText = scene.add.text(20, 500, "", {
+          ...textStyle,
+          fill: "#22bb22", // Green for USD
+          fixedWidth: 350, // Fixed width for USD
+        });
+
+        yearText = scene.add.text(20, 535, "", {
+          ...textStyle,
+          fixedWidth: 350, // Fixed width for year
+        });
+
+        // Right side: Bitcoin and Status
+        bitcoinText = scene.add.text(400, 500, "", {
+          ...textStyle,
+          fill: "#ff9900", // Orange for Bitcoin
+          fixedWidth: 350, // Fixed width for Bitcoin
+        });
+
+        statusText = scene.add.text(400, 535, "", {
+          ...textStyle,
+          fixedWidth: 350, // Fixed width for status
+          align: "left",
+        });
+
+        // Initial display update
+        updateDisplays();
+      }
+
+      function update() {
+        // Update player movement
+        const speed = 160;
+
+        if (cursors.left.isDown) {
+          player.setVelocityX(-speed);
+        } else if (cursors.right.isDown) {
+          player.setVelocityX(speed);
+        } else {
+          player.setVelocityX(0);
+        }
+
+        if (cursors.up.isDown) {
+          player.setVelocityY(-speed);
+        } else if (cursors.down.isDown) {
+          player.setVelocityY(speed);
+        } else {
+          player.setVelocityY(0);
+        }
+
+        // Update time and apply inflation every SECONDS_PER_YEAR
+        const elapsedYears = Math.floor(
+          (this.time.now - gameStartTime) / (SECONDS_PER_YEAR * 1000)
+        );
+        if (elapsedYears > currentYear - STARTING_YEAR) {
+          currentYear = STARTING_YEAR + elapsedYears;
+          // Apply compound inflation
+          usdValue = startingUSD * Math.pow(1 - INFLATION_RATE, elapsedYears);
+          updateDisplays();
+        }
+      }
+
+      function showNextMessage() {
+        if (messageQueue.length > 0 && !isDisplayingMessage) {
+          isDisplayingMessage = true;
+          const message = messageQueue.shift();
+          statusText.setText(message);
+          this.time.delayedCall(2000, () => {
+            statusText.setText("");
+            isDisplayingMessage = false;
+            showNextMessage.call(this);
+          });
+        }
+      }
+
+      function queueMessage(scene, message) {
+        messageQueue.push(message);
+        if (!isDisplayingMessage) {
+          showNextMessage.call(scene);
+        }
+      }
+
+      function buyBitcoin(player, bitcoinBuy) {
+        bitcoinBuy.destroy();
+
+        // Buy $10,000 worth of bitcoin at current purchasing power
+        const purchaseAmount = Math.min(10000, usdValue);
+        const satsPurchased = Math.floor(purchaseAmount * 100); // Simple conversion for game
+        bitcoinStack += satsPurchased;
+
+        queueMessage(
+          this,
+          "Bought " + satsPurchased.toLocaleString() + " sats! 🎉"
+        );
+        updateDisplays();
+      }
+
+      function hitShitcoin(player, shitcoin) {
+        shitcoin.destroy();
+        // Lose half your bitcoin
+        const lossAmount = Math.floor(bitcoinStack / 2);
+        bitcoinStack -= lossAmount;
+
+        queueMessage(
+          this,
+          "Rekt by shitcoin! Lost " + lossAmount.toLocaleString() + " sats! 💀"
+        );
+        updateDisplays();
+      }
+
+      function updateDisplays() {
+        usdText.setText(
+          "USD Purchasing Power: $" + Math.floor(usdValue).toLocaleString()
+        );
+        bitcoinText.setText("BTC: ₿" + (bitcoinStack / 100000000).toFixed(8));
+        yearText.setText("Year: " + currentYear);
+      }
+
+      function reachExit(player, exit) {
+        // Stop all updates
+        this.scene.pause();
+        player.setVelocity(0);
+        const finalYears = currentYear - STARTING_YEAR;
+
+        // Start victory scene and stop current scene
+        this.scene.start("VictoryScene", {
+          finalYears: finalYears,
+          finalUSD: usdValue,
+          bitcoinStack: bitcoinStack,
+          startingUSD: startingUSD,
+        });
+
+        // Disable player movement
+        cursors.left.enabled = false;
+        cursors.right.enabled = false;
+        cursors.up.enabled = false;
+        cursors.down.enabled = false;
+      }
+    </script>
+  </body>
+</html>
