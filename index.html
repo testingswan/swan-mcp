@@ -455,6 +455,9 @@
         player = scene.physics.add.sprite(75, 75, "player");
         player.setCollideWorldBounds(true);
 
+        // Ensure the player is rendered as a circle for physics
+        player.body.setCircle(16); // Set the physics body to be circular with radius 16
+
         // Set up collisions
         scene.physics.add.collider(player, walls);
 
