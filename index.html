@@ -550,7 +550,7 @@
           isDisplayingMessage = true;
           const message = messageQueue.shift();
           statusText.setText(message);
-          this.time.delayedCall(3000, () => {
+          this.time.delayedCall(1500, () => {
             statusText.setText("");
             isDisplayingMessage = false;
             showNextMessage.call(this);
