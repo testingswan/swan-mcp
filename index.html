@@ -330,9 +330,9 @@
         const graphics = this.add.graphics();
         const colors = getThemeColors();
 
-        // Player (blue)
+        // Player (blue circle)
         graphics.fillStyle(colors.player);
-        graphics.fillRect(0, 0, 32, 32);
+        graphics.fillCircle(16, 16, 16);
         graphics.generateTexture("player", 32, 32);
 
         // Wall (gray)
