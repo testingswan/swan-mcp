@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 
 // Define TypeScript interfaces
@@ -26,38 +26,38 @@ interface Message {
   expiresAt: number;
 }
 
-function App() {
+const App: React.FC = () => {
   const [position, setPosition] = useState<Position>({ x: 50, y: 50 });
   const [bitcoins, setBitcoins] = useState<Bitcoin[]>([]);
   const [shitcoins, setShitcoins] = useState<Shitcoin[]>([]);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState<number>(0);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
 
   // Handle keyboard input to move the swan
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "ArrowUp":
-          setPosition((prev) => ({ ...prev, y: Math.max(prev.y - 5, 0) }));
-          break;
-        case "ArrowDown":
-          setPosition((prev) => ({ ...prev, y: Math.min(prev.y + 5, 90) }));
-          break;
-        case "ArrowLeft":
-          setPosition((prev) => ({ ...prev, x: Math.max(prev.x - 5, 0) }));
-          break;
-        case "ArrowRight":
-          setPosition((prev) => ({ ...prev, x: Math.min(prev.x + 5, 90) }));
-          break;
-        default:
-          break;
-      }
-    };
+  const handleKeyDown = useCallback((e: KeyboardEvent): void => {
+    switch (e.key) {
+      case "ArrowUp":
+        setPosition((prev) => ({ ...prev, y: Math.max(prev.y - 5, 0) }));
+        break;
+      case "ArrowDown":
+        setPosition((prev) => ({ ...prev, y: Math.min(prev.y + 5, 90) }));
+        break;
+      case "ArrowLeft":
+        setPosition((prev) => ({ ...prev, x: Math.max(prev.x - 5, 0) }));
+        break;
+      case "ArrowRight":
+        setPosition((prev) => ({ ...prev, x: Math.min(prev.x + 5, 90) }));
+        break;
+      default:
+        break;
+    }
+  }, []);
 
+  useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [handleKeyDown]);
 
   // Generate random bitcoins
   useEffect(() => {
@@ -73,7 +73,7 @@ function App() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [bitcoins]);
+  }, [bitcoins.length]);
 
   // Generate random shitcoins
   useEffect(() => {
@@ -100,7 +100,7 @@ function App() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [shitcoins]);
+  }, [shitcoins.length]);
 
   // Check for collisions
   useEffect(() => {
@@ -156,6 +156,11 @@ function App() {
     setMessages((prev) => prev.filter((msg) => msg.expiresAt > Date.now()));
   }, [position, bitcoins, shitcoins]);
 
+  // Toggle dark/light mode
+  const toggleTheme = (): void => {
+    setIsDarkMode((prev) => !prev);
+  };
+
   return (
     <div
       className={`game-container ${isDarkMode ? "dark-mode" : "light-mode"}`}
@@ -165,7 +170,10 @@ function App() {
         <div className="score">Score: {score}</div>
         <button
           className="theme-toggle"
-          onClick={() => setIsDarkMode(!isDarkMode)}
+          onClick={toggleTheme}
+          aria-label={
+            isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+          }
         >
           {isDarkMode ? "☀️" : "🌙"}
         </button>
@@ -219,6 +227,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 export default App;

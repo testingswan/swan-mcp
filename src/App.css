@@ -1,42 +1,19 @@
-.App {
-  text-align: center;
+/* Reset some browser defaults */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+#root {
+  height: 100%;
+  width: 100%;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+/* Game container styles */
 .game-container {
   display: flex;
   flex-direction: column;
@@ -45,18 +22,20 @@
   min-height: 100vh;
   padding: 20px;
   transition: background-color 0.3s, color 0.3s;
+  font-family: "Courier New", Courier, monospace;
 }
 
-.dark-mode {
+.game-container.dark-mode {
   background-color: #121212;
   color: white;
 }
 
-.light-mode {
+.game-container.light-mode {
   background-color: #f5f5f5;
   color: #121212;
 }
 
+/* Header styles */
 .game-header {
   display: flex;
   justify-content: space-between;
@@ -64,6 +43,14 @@
   width: 100%;
   max-width: 600px;
   margin-bottom: 20px;
+  padding: 10px;
+}
+
+.game-header h1 {
+  color: #f7931a;
+  text-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
+  margin: 0;
+  font-size: 24px;
 }
 
 .score {
@@ -85,6 +72,7 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Game area styles */
 .game-area {
   position: relative;
   width: 80vw;
@@ -97,11 +85,13 @@
   border: 2px solid #f7931a;
 }
 
+/* Player and item styles */
 .player {
   position: absolute;
   font-size: 2rem;
   transform: translate(-50%, -50%);
   transition: left 0.1s, top 0.1s;
+  z-index: 10;
 }
 
 .bitcoin {
@@ -109,6 +99,7 @@
   font-size: 1.5rem;
   color: #f7931a;
   transform: translate(-50%, -50%);
+  z-index: 5;
 }
 
 .shitcoin {
@@ -119,8 +110,10 @@
   color: white;
   border-radius: 5px;
   transform: translate(-50%, -50%);
+  z-index: 5;
 }
 
+/* Message styles */
 .messages {
   position: absolute;
   bottom: 20px;
@@ -130,6 +123,7 @@
   flex-direction: column;
   align-items: center;
   pointer-events: none;
+  z-index: 20;
 }
 
 .message {
