@@ -35,25 +35,46 @@ const App: React.FC = () => {
   const [collectedCount, setCollectedCount] = useState<number>(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [gameWon, setGameWon] = useState<boolean>(false);
+  const [confetti, setConfetti] = useState<
+    { x: number; y: number; color: string }[]
+  >([]);
 
   // Handle keyboard input to move the swan
-  const handleKeyDown = useCallback((e: KeyboardEvent): void => {
-    switch (e.key) {
-      case "ArrowUp":
-        setPosition((prev) => ({ ...prev, y: Math.max(prev.y - 5, 0) }));
-        break;
-      case "ArrowDown":
-        setPosition((prev) => ({ ...prev, y: Math.min(prev.y + 5, 90) }));
-        break;
-      case "ArrowLeft":
-        setPosition((prev) => ({ ...prev, x: Math.max(prev.x - 5, 0) }));
-        break;
-      case "ArrowRight":
-        setPosition((prev) => ({ ...prev, x: Math.min(prev.x + 5, 90) }));
-        break;
-      default:
-        break;
-    }
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent): void => {
+      if (gameWon) return; // Disable movement when game is won
+
+      switch (e.key) {
+        case "ArrowUp":
+          setPosition((prev) => ({ ...prev, y: Math.max(prev.y - 5, 0) }));
+          break;
+        case "ArrowDown":
+          setPosition((prev) => ({ ...prev, y: Math.min(prev.y + 5, 90) }));
+          break;
+        case "ArrowLeft":
+          setPosition((prev) => ({ ...prev, x: Math.max(prev.x - 5, 0) }));
+          break;
+        case "ArrowRight":
+          setPosition((prev) => ({ ...prev, x: Math.min(prev.x + 5, 90) }));
+          break;
+        default:
+          break;
+      }
+    },
+    [gameWon]
+  );
+
+  // Reset game function
+  const resetGame = useCallback(() => {
+    setPosition({ x: 50, y: 50 });
+    setBitcoins([]);
+    setShitcoins([]);
+    setScore(0);
+    setCollectedCount(0);
+    setMessages([]);
+    setGameWon(false);
+    setConfetti([]);
   }, []);
 
   useEffect(() => {
@@ -61,8 +82,29 @@ const App: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // Generate confetti for the victory screen
+  useEffect(() => {
+    if (gameWon) {
+      const colors = ["#f7931a", "#ffcc00", "#ffffff", "#ff9900", "#ffd700"];
+      const newConfetti = [];
+
+      // Create 150 confetti pieces
+      for (let i = 0; i < 150; i++) {
+        newConfetti.push({
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          color: colors[Math.floor(Math.random() * colors.length)],
+        });
+      }
+
+      setConfetti(newConfetti);
+    }
+  }, [gameWon]);
+
   // Generate random bitcoins with different values
   useEffect(() => {
+    if (gameWon) return; // Stop generating when game is won
+
     const interval = setInterval(() => {
       if (bitcoins.length < 5) {
         // Generate a random value between 0.5 and 3.0
@@ -79,10 +121,12 @@ const App: React.FC = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [bitcoins.length]);
+  }, [bitcoins.length, gameWon]);
 
   // Generate random shitcoins
   useEffect(() => {
+    if (gameWon) return; // Stop generating when game is won
+
     const interval = setInterval(() => {
       if (shitcoins.length < 8) {
         const shitcoinTypes = [
@@ -106,10 +150,20 @@ const App: React.FC = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [shitcoins.length]);
+  }, [shitcoins.length, gameWon]);
 
-  // Check for collisions
+  // Check for victory or collisions
   useEffect(() => {
+    // Check for victory
+    if (score === 6.15 && !gameWon) {
+      setGameWon(true);
+      setBitcoins([]);
+      setShitcoins([]);
+      return;
+    }
+
+    if (gameWon) return; // Skip collision detection if game is won
+
     // Bitcoin collection
     const collectedBitcoins = bitcoins.filter((bitcoin) => {
       const distance = Math.sqrt(
@@ -132,7 +186,10 @@ const App: React.FC = () => {
       );
 
       // Update score
-      setScore((prev) => parseFloat((prev + totalValue).toFixed(2)));
+      setScore((prev) => {
+        const newScore = parseFloat((prev + totalValue).toFixed(2));
+        return newScore;
+      });
 
       // Update collection count
       setCollectedCount((prev) => prev + collectedBitcoins.length);
@@ -196,7 +253,7 @@ const App: React.FC = () => {
 
     // Expire old messages
     setMessages((prev) => prev.filter((msg) => msg.expiresAt > Date.now()));
-  }, [position, bitcoins, shitcoins, collectedCount]);
+  }, [position, bitcoins, shitcoins, collectedCount, score, gameWon]);
 
   // Toggle dark/light mode
   const toggleTheme = (): void => {
@@ -220,52 +277,91 @@ const App: React.FC = () => {
       </header>
 
       <div className="game-area">
-        {/* Swan (player) */}
-        <div
-          className="player"
-          style={{ left: `${position.x}%`, top: `${position.y}%` }}
-        >
-          🦢
-        </div>
+        {gameWon ? (
+          <div className="victory-screen">
+            {/* Confetti */}
+            {confetti.map((piece, index) => (
+              <div
+                key={index}
+                className="confetti"
+                style={{
+                  left: `${piece.x}%`,
+                  top: `${piece.y}%`,
+                  backgroundColor: piece.color,
+                  animationDelay: `${Math.random() * 2}s`,
+                }}
+              />
+            ))}
 
-        {/* Bitcoins with values */}
-        {bitcoins.map((bitcoin) => (
-          <div
-            key={bitcoin.id}
-            className="bitcoin"
-            style={{ left: `${bitcoin.x}%`, top: `${bitcoin.y}%` }}
-          >
-            <div className="bitcoin-symbol">₿</div>
-            <div className="bitcoin-value">{bitcoin.value}</div>
-          </div>
-        ))}
-
-        {/* Shitcoins */}
-        {shitcoins.map((shitcoin) => (
-          <div
-            key={shitcoin.id}
-            className="shitcoin"
-            style={{ left: `${shitcoin.x}%`, top: `${shitcoin.y}%` }}
-          >
-            {shitcoin.type}
-          </div>
-        ))}
-
-        {/* Messages */}
-        <div className="messages">
-          {messages.map((msg) => (
-            <div key={msg.id} className="message">
-              {msg.text}
+            <div className="victory-content">
+              <h2>🎉 VICTORY! 🎉</h2>
+              <h3>You've Accumulated 6.15 BTC</h3>
+              <p>
+                Congratulations! You've escaped the fiat matrix and secured your
+                financial freedom with Bitcoin!
+              </p>
+              <div className="victory-bitcoin">₿</div>
+              <button className="restart-button" onClick={resetGame}>
+                Play Again
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <>
+            {/* Swan (player) */}
+            <div
+              className="player"
+              style={{ left: `${position.x}%`, top: `${position.y}%` }}
+            >
+              🦢
+            </div>
+
+            {/* Bitcoins with values */}
+            {bitcoins.map((bitcoin) => (
+              <div
+                key={bitcoin.id}
+                className="bitcoin"
+                style={{ left: `${bitcoin.x}%`, top: `${bitcoin.y}%` }}
+              >
+                <div className="bitcoin-symbol">₿</div>
+                <div className="bitcoin-value">{bitcoin.value}</div>
+              </div>
+            ))}
+
+            {/* Shitcoins */}
+            {shitcoins.map((shitcoin) => (
+              <div
+                key={shitcoin.id}
+                className="shitcoin"
+                style={{ left: `${shitcoin.x}%`, top: `${shitcoin.y}%` }}
+              >
+                {shitcoin.type}
+              </div>
+            ))}
+
+            {/* Messages */}
+            <div className="messages">
+              {messages.map((msg) => (
+                <div key={msg.id} className="message">
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="instructions">
-        <p>
-          Use arrow keys to control the swan. Collect Bitcoin (each worth
-          different values), avoid shitcoins (-0.5 BTC each)!
-        </p>
+        {gameWon ? (
+          <p>
+            You've accumulated exactly 6.15 BTC and escaped the fiat matrix!
+          </p>
+        ) : (
+          <p>
+            Use arrow keys to control the swan. Collect Bitcoin (each worth
+            different values), avoid shitcoins (-0.5 BTC each)!
+          </p>
+        )}
       </div>
     </div>
   );
