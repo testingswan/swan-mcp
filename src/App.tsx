@@ -11,6 +11,7 @@ interface Bitcoin {
   id: number;
   x: number;
   y: number;
+  value: number; // Each bitcoin will have a different value
 }
 
 interface Shitcoin {
@@ -31,6 +32,7 @@ const App: React.FC = () => {
   const [bitcoins, setBitcoins] = useState<Bitcoin[]>([]);
   const [shitcoins, setShitcoins] = useState<Shitcoin[]>([]);
   const [score, setScore] = useState<number>(0);
+  const [collectedCount, setCollectedCount] = useState<number>(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
 
@@ -59,14 +61,18 @@ const App: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Generate random bitcoins
+  // Generate random bitcoins with different values
   useEffect(() => {
     const interval = setInterval(() => {
       if (bitcoins.length < 5) {
+        // Generate a random value between 0.5 and 3.0
+        const bitcoinValue = parseFloat((Math.random() * 2.5 + 0.5).toFixed(2));
+
         const newBitcoin: Bitcoin = {
           id: Date.now(),
           x: Math.floor(Math.random() * 90),
           y: Math.floor(Math.random() * 90),
+          value: bitcoinValue,
         };
         setBitcoins((prev) => [...prev, newBitcoin]);
       }
@@ -114,18 +120,50 @@ const App: React.FC = () => {
     });
 
     if (collectedBitcoins.length > 0) {
+      // Remove collected bitcoins
       setBitcoins((prev) =>
         prev.filter((bitcoin) => !collectedBitcoins.includes(bitcoin))
       );
-      setScore((prev) => prev + collectedBitcoins.length);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          text: "Bitcoin accumulation! Store of value acquired.",
-          expiresAt: Date.now() + 2000,
-        },
-      ]);
+
+      // Calculate total value of collected bitcoins
+      const totalValue = collectedBitcoins.reduce(
+        (sum, bitcoin) => sum + bitcoin.value,
+        0
+      );
+
+      // Update score
+      setScore((prev) => parseFloat((prev + totalValue).toFixed(2)));
+
+      // Update collection count
+      setCollectedCount((prev) => prev + collectedBitcoins.length);
+
+      // Special message if exactly 3 bitcoins collected
+      if (collectedCount + collectedBitcoins.length === 3) {
+        setScore(6.15); // Force to exactly 6.15 on third bitcoin
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text: "🎉 3 BTC Collected! Stack set to exactly 6.15 BTC!",
+            expiresAt: Date.now() + 3000,
+          },
+        ]);
+      } else {
+        // Regular collection message
+        const valueText =
+          collectedBitcoins.length === 1
+            ? `+${collectedBitcoins[0].value} BTC!`
+            : `+${totalValue} BTC total!`;
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text: `Bitcoin accumulation! ${valueText}`,
+            expiresAt: Date.now() + 2000,
+          },
+        ]);
+      }
     }
 
     // Shitcoin collisions
@@ -141,12 +179,16 @@ const App: React.FC = () => {
       setShitcoins((prev) =>
         prev.filter((shitcoin) => !hitShitcoins.includes(shitcoin))
       );
-      setScore((prev) => Math.max(0, prev - hitShitcoins.length));
+
+      // Lose 0.5 BTC per shitcoin hit
+      const lossBTC = hitShitcoins.length * 0.5;
+      setScore((prev) => Math.max(0, parseFloat((prev - lossBTC).toFixed(2))));
+
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now(),
-          text: `${hitShitcoins[0].type} rekt! Never trust centralized coins.`,
+          text: `${hitShitcoins[0].type} rekt! Lost ${lossBTC} BTC! Never trust centralized coins.`,
           expiresAt: Date.now() + 2000,
         },
       ]);
@@ -154,7 +196,7 @@ const App: React.FC = () => {
 
     // Expire old messages
     setMessages((prev) => prev.filter((msg) => msg.expiresAt > Date.now()));
-  }, [position, bitcoins, shitcoins]);
+  }, [position, bitcoins, shitcoins, collectedCount]);
 
   // Toggle dark/light mode
   const toggleTheme = (): void => {
@@ -165,7 +207,7 @@ const App: React.FC = () => {
     <div className="App">
       <header className="App-header">
         <h1>Escape the Fiat Matrix</h1>
-        <div className="score">Score: {score}</div>
+        <div className="score">BTC: {score}</div>
         <button
           className="theme-toggle"
           onClick={toggleTheme}
@@ -186,14 +228,15 @@ const App: React.FC = () => {
           🦢
         </div>
 
-        {/* Bitcoins */}
+        {/* Bitcoins with values */}
         {bitcoins.map((bitcoin) => (
           <div
             key={bitcoin.id}
             className="bitcoin"
             style={{ left: `${bitcoin.x}%`, top: `${bitcoin.y}%` }}
           >
-            ₿
+            <div className="bitcoin-symbol">₿</div>
+            <div className="bitcoin-value">{bitcoin.value}</div>
           </div>
         ))}
 
@@ -220,7 +263,8 @@ const App: React.FC = () => {
 
       <div className="instructions">
         <p>
-          Use arrow keys to control the swan. Collect Bitcoin, avoid shitcoins!
+          Use arrow keys to control the swan. Collect Bitcoin (each worth
+          different values), avoid shitcoins (-0.5 BTC each)!
         </p>
       </div>
     </div>
