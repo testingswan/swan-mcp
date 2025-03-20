@@ -162,10 +162,8 @@ const App: React.FC = () => {
   };
 
   return (
-    <div
-      className={`game-container ${isDarkMode ? "dark-mode" : "light-mode"}`}
-    >
-      <div className="game-header">
+    <div className="App">
+      <header className="App-header">
         <h1>Escape the Fiat Matrix</h1>
         <div className="score">Score: {score}</div>
         <button
@@ -177,7 +175,7 @@ const App: React.FC = () => {
         >
           {isDarkMode ? "☀️" : "🌙"}
         </button>
-      </div>
+      </header>
 
       <div className="game-area">
         {/* Swan (player) */}
