@@ -115,6 +115,38 @@
   z-index: 5;
 }
 
+/* Laser styles */
+.laser {
+  position: absolute;
+  width: 12px;
+  height: 3px;
+  background-color: #ff0000;
+  transform: translate(-50%, -50%);
+  z-index: 8;
+  box-shadow: 0 0 8px #ff0000, 0 0 12px #ff3333;
+  border-radius: 2px;
+}
+
+.laser-right {
+  transform: translate(-50%, -50%) rotate(0deg);
+  width: 20px;
+}
+
+.laser-left {
+  transform: translate(-50%, -50%) rotate(180deg);
+  width: 20px;
+}
+
+.laser-up {
+  transform: translate(-50%, -50%) rotate(270deg);
+  width: 20px;
+}
+
+.laser-down {
+  transform: translate(-50%, -50%) rotate(90deg);
+  width: 20px;
+}
+
 .messages {
   position: absolute;
   bottom: 20px;
