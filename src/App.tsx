@@ -35,10 +35,17 @@ interface Laser {
   direction: "up" | "down" | "left" | "right";
 }
 
+interface DestroyedShitcoin extends Shitcoin {
+  destroyedAt: number;
+}
+
 const App: React.FC = () => {
   const [position, setPosition] = useState<Position>({ x: 50, y: 50 });
   const [bitcoins, setBitcoins] = useState<Bitcoin[]>([]);
   const [shitcoins, setShitcoins] = useState<Shitcoin[]>([]);
+  const [destroyedShitcoins, setDestroyedShitcoins] = useState<
+    DestroyedShitcoin[]
+  >([]);
   const [score, setScore] = useState<number>(0);
   const [collectedCount, setCollectedCount] = useState<number>(0);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -237,7 +244,7 @@ const App: React.FC = () => {
         const destroyedLasers: number[] = [];
 
         setShitcoins((prevShitcoins) => {
-          const destroyedShitcoins: Shitcoin[] = [];
+          const destroyedShitcoinsList: Shitcoin[] = [];
 
           // Check each laser against each shitcoin
           currentLasers.forEach((laser) => {
@@ -249,8 +256,17 @@ const App: React.FC = () => {
 
               // If collision detected
               if (distance < 5) {
-                destroyedShitcoins.push(shitcoin);
+                destroyedShitcoinsList.push(shitcoin);
                 destroyedLasers.push(laser.id);
+
+                // Add to destroyed shitcoins with animation
+                setDestroyedShitcoins((prev) => [
+                  ...prev,
+                  {
+                    ...shitcoin,
+                    destroyedAt: Date.now(),
+                  },
+                ]);
 
                 // Add message about destroying the shitcoin
                 setMessages((prev) => [
@@ -267,7 +283,7 @@ const App: React.FC = () => {
 
           // Return shitcoins that weren't destroyed
           return prevShitcoins.filter(
-            (shitcoin) => !destroyedShitcoins.includes(shitcoin)
+            (shitcoin) => !destroyedShitcoinsList.includes(shitcoin)
           );
         });
 
@@ -276,10 +292,21 @@ const App: React.FC = () => {
           (laser) => !destroyedLasers.includes(laser.id)
         );
       });
-    }, 50); // Update lasers every 50ms for smooth movement
+    }, 50);
 
     return () => clearInterval(laserInterval);
   }, [gameWon]);
+
+  // Clean up destroyed shitcoins after animation
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      setDestroyedShitcoins((prev) =>
+        prev.filter((coin) => Date.now() - coin.destroyedAt < 1000)
+      );
+    }, 100);
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
 
   // Check for victory or collisions
   useEffect(() => {
@@ -473,6 +500,20 @@ const App: React.FC = () => {
                 key={shitcoin.id}
                 className="shitcoin"
                 style={{ left: `${shitcoin.x}%`, top: `${shitcoin.y}%` }}
+              >
+                {shitcoin.type}
+              </div>
+            ))}
+
+            {/* Destroyed Shitcoins */}
+            {destroyedShitcoins.map((shitcoin) => (
+              <div
+                key={`destroyed-${shitcoin.id}`}
+                className="destroyed-shitcoin"
+                style={{
+                  left: `${shitcoin.x}%`,
+                  top: `${shitcoin.y}%`,
+                }}
               >
                 {shitcoin.type}
               </div>
