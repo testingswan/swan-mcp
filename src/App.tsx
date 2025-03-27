@@ -273,7 +273,7 @@ const App: React.FC = () => {
                   ...prev,
                   {
                     id: Date.now(),
-                    text: `Laser destroyed ${shitcoin.type}! 💥`,
+                    text: `Stinger destroyed ${shitcoin.type}! 💥`,
                     expiresAt: Date.now() + 2000,
                   },
                 ]);
@@ -358,7 +358,7 @@ const App: React.FC = () => {
           ...prev,
           {
             id: Date.now(),
-            text: "🎉 3 BTC Collected! Stack set to exactly 6.15 BTC!",
+            text: "🎉 3 BTC Collected! Hive's honey stores set to 6.15 BTC!",
             expiresAt: Date.now() + 3000,
           },
         ]);
@@ -373,7 +373,7 @@ const App: React.FC = () => {
           ...prev,
           {
             id: Date.now(),
-            text: `Bitcoin accumulation! ${valueText}`,
+            text: `Sweet Bitcoin honey collected! ${valueText}`,
             expiresAt: Date.now() + 2000,
           },
         ]);
@@ -402,7 +402,7 @@ const App: React.FC = () => {
         ...prev,
         {
           id: Date.now(),
-          text: `${hitShitcoins[0].type} rekt! Lost ${lossBTC} BTC! Never trust centralized coins.`,
+          text: `${hitShitcoins[0].type} stung you! Lost ${lossBTC} BTC! Beware of toxic coins!`,
           expiresAt: Date.now() + 2000,
         },
       ]);
@@ -420,7 +420,7 @@ const App: React.FC = () => {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Escape the Fiat Matrix</h1>
+        <h1>The Bitcoin Hive</h1>
         <div className="score">BTC: {score}</div>
         <button
           className="theme-toggle"
@@ -451,11 +451,11 @@ const App: React.FC = () => {
             ))}
 
             <div className="victory-content">
-              <h2>🎉 VICTORY! 🎉</h2>
-              <h3>You've Accumulated 6.15 BTC</h3>
+              <h2>🎉 SWEET VICTORY! 🎉</h2>
+              <h3>You've Collected 6.15 BTC</h3>
               <p>
-                Congratulations! You've escaped the fiat matrix and secured your
-                financial freedom with Bitcoin!
+                Congratulations! You've gathered enough Bitcoin honey to secure
+                your hive's financial freedom!
               </p>
               <div className="victory-bitcoin">₿</div>
               <button className="restart-button" onClick={handleResetGame}>
@@ -465,12 +465,12 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Swan (player) */}
+            {/* Bee (player) */}
             <div
               className="player"
               style={{ left: `${position.x}%`, top: `${position.y}%` }}
             >
-              🦢
+              🐝
             </div>
 
             {/* Lasers */}
@@ -534,13 +534,14 @@ const App: React.FC = () => {
       <div className="instructions">
         {gameWon ? (
           <p>
-            You've accumulated exactly 6.15 BTC and escaped the fiat matrix!
+            You've collected exactly 6.15 BTC of sweet Bitcoin honey for your
+            hive!
           </p>
         ) : (
           <p>
-            Use arrow keys to control the swan. Collect Bitcoin (each worth
-            different values), avoid shitcoins (-0.5 BTC each)! Press 'L' to
-            shoot lasers and destroy shitcoins!
+            Guide your worker bee with arrow keys to collect Bitcoin honey (each
+            worth different values), avoid toxic shitcoins (-0.5 BTC each)!
+            Press 'L' to shoot stingers and destroy shitcoins!
           </p>
         )}
       </div>
