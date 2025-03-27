@@ -316,3 +316,35 @@ h1 {
   background-color: #e07c08;
   transform: scale(1.05);
 }
+
+.trash-can {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  z-index: 15;
+}
+
+.destroyed-shitcoin {
+  position: absolute;
+  font-size: 1rem;
+  padding: 5px;
+  background-color: black;
+  color: white;
+  border-radius: 5px;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  animation: moveToTrash 1s ease-in-out forwards;
+}
+
+@keyframes moveToTrash {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(100vw - 40px), 50vh) scale(0.5) rotate(360deg);
+  }
+}
